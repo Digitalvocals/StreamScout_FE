@@ -71,7 +71,7 @@ export default function Home() {
   const fetchData = async () => {
     try {
       setLoading(true)
-      const response = await axios.get(`${API_URL}/api/v1/analyze?limit=15`)
+      const response = await axios.get(`${API_URL}/api/v1/analyze?limit=75`)
       setData(response.data)
       setError(null)
     } catch (err) {
@@ -131,7 +131,7 @@ export default function Home() {
           [ TWITCH STREAMING OPPORTUNITIES ]
         </h1>
         <p className="text-xl text-matrix-green-dim mb-6">
-          Find the BEST games to stream RIGHT NOW • Real-time analysis • Top 15 Games
+          Find the BEST games to stream RIGHT NOW • Real-time analysis • Top 75 Games
         </p>
         
         {data && (
