@@ -17,6 +17,7 @@ interface GameOpportunity {
   overall_score: number
   recommendation: string
   trend: string
+  box_art_url: string | null
   purchase_links: {
     steam: string | null
     epic: string | null
@@ -37,6 +38,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedGame, setSelectedGame] = useState<GameOpportunity | null>(null)
+  const [countdown, setCountdown] = useState<number>(0)
 
   useEffect(() => {
     fetchData()
@@ -44,6 +46,27 @@ export default function Home() {
     const interval = setInterval(fetchData, 15 * 60 * 1000)
     return () => clearInterval(interval)
   }, [])
+
+  // Countdown timer
+  useEffect(() => {
+    if (!data) return
+
+    // Set initial countdown
+    setCountdown(data.cache_expires_in_seconds)
+
+    // Update countdown every second
+    const timer = setInterval(() => {
+      setCountdown(prev => {
+        if (prev <= 1) {
+          fetchData() // Auto-refresh when countdown hits 0
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(timer)
+  }, [data?.timestamp]) // Reset when new data arrives
 
   const fetchData = async () => {
     try {
@@ -57,6 +80,12 @@ export default function Home() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const formatCountdown = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
   }
 
   const getScoreColor = (score: number) => {
@@ -102,7 +131,7 @@ export default function Home() {
           [ TWITCH STREAMING OPPORTUNITIES ]
         </h1>
         <p className="text-xl text-matrix-green-dim mb-6">
-          Find the BEST games to stream RIGHT NOW • Real-time analysis • 100% Free
+          Find the BEST games to stream RIGHT NOW • Real-time analysis • Top 100 Games
         </p>
         
         {data && (
@@ -114,7 +143,7 @@ export default function Home() {
               ⏱️ UPDATED: {new Date(data.timestamp).toLocaleTimeString()}
             </div>
             <div className="matrix-badge">
-              🔄 NEXT UPDATE: {Math.floor(data.cache_expires_in_seconds / 60)} MIN
+              🔄 NEXT UPDATE: {formatCountdown(countdown)}
             </div>
           </div>
         )}
@@ -129,67 +158,85 @@ export default function Home() {
               className="matrix-card cursor-pointer"
               onClick={() => setSelectedGame(selectedGame?.rank === game.rank ? null : game)}
             >
-              <div className="flex items-start justify-between gap-4">
-                {/* Left: Rank & Game Info */}
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="text-4xl font-bold text-matrix-green-bright">
-                      #{game.rank}
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-bold">{game.name}</h2>
-                      <div className="text-sm text-matrix-green-dim mt-1">
-                        👁 {game.viewers.toLocaleString()} viewers • 
-                        📺 {game.channels} channels • 
-                        📊 {game.avg_viewers_per_channel} avg/ch
+              <div className="flex items-start gap-4">
+                {/* Game Cover Image */}
+                {game.box_art_url && (
+                  <div className="flex-shrink-0">
+                    <img 
+                      src={game.box_art_url} 
+                      alt={game.name}
+                      className="w-32 h-44 object-cover rounded border-2 border-matrix-green/50"
+                      onError={(e) => {
+                        // Hide image if it fails to load
+                        e.currentTarget.style.display = 'none'
+                      }}
+                    />
+                  </div>
+                )}
+                
+                {/* Main Content */}
+                <div className="flex-1 flex items-start justify-between gap-4">
+                  {/* Left: Rank & Game Info */}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="text-4xl font-bold text-matrix-green-bright">
+                        #{game.rank}
                       </div>
+                      <div>
+                        <h2 className="text-2xl font-bold">{game.name}</h2>
+                        <div className="text-sm text-matrix-green-dim mt-1">
+                          👁 {game.viewers.toLocaleString()} viewers • 
+                          📺 {game.channels} channels • 
+                          📊 {game.avg_viewers_per_channel} avg/ch
+                        </div>
+                      </div>
+                      <div className="text-3xl">{game.trend}</div>
                     </div>
-                    <div className="text-3xl">{game.trend}</div>
+                    
+                    {/* Purchase Links */}
+                    <div className="flex gap-3 mt-3">
+                      {game.purchase_links.free ? (
+                        <span className="text-sm font-bold text-matrix-green-bright">
+                          ✨ FREE TO PLAY
+                        </span>
+                      ) : (
+                        <>
+                          {game.purchase_links.steam && (
+                            <a
+                              href={game.purchase_links.steam}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-sm underline hover:text-matrix-green-bright transition-colors"
+                            >
+                              🎮 Buy on Steam
+                            </a>
+                          )}
+                          {game.purchase_links.epic && (
+                            <a
+                              href={game.purchase_links.epic}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-sm underline hover:text-matrix-green-bright transition-colors"
+                            >
+                              🎮 Buy on Epic
+                            </a>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
-                  
-                  {/* Purchase Links */}
-                  <div className="flex gap-3 mt-3">
-                    {game.purchase_links.free ? (
-                      <span className="text-sm font-bold text-matrix-green-bright">
-                        ✨ FREE TO PLAY
-                      </span>
-                    ) : (
-                      <>
-                        {game.purchase_links.steam && (
-                          <a
-                            href={game.purchase_links.steam}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-sm underline hover:text-matrix-green-bright transition-colors"
-                          >
-                            🎮 Buy on Steam
-                          </a>
-                        )}
-                        {game.purchase_links.epic && (
-                          <a
-                            href={game.purchase_links.epic}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-sm underline hover:text-matrix-green-bright transition-colors"
-                          >
-                            🎮 Buy on Epic
-                          </a>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </div>
 
-                {/* Right: Score */}
-                <div className="text-center">
-                  <div className={`text-5xl font-bold ${getScoreColor(game.overall_score)}`}>
-                    {game.overall_score.toFixed(2)}
-                  </div>
-                  <div className="text-xs text-matrix-green-dim mt-1">SCORE</div>
-                  <div className="text-xs mt-2 font-bold">
-                    {game.recommendation}
+                  {/* Right: Score */}
+                  <div className="text-center">
+                    <div className={`text-5xl font-bold ${getScoreColor(game.overall_score)}`}>
+                      {game.overall_score.toFixed(2)}
+                    </div>
+                    <div className="text-xs text-matrix-green-dim mt-1">SCORE</div>
+                    <div className="text-xs mt-2 font-bold">
+                      {game.recommendation}
+                    </div>
                   </div>
                 </div>
               </div>
