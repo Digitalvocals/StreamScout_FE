@@ -64,7 +64,7 @@ export default function Home() {
   const fetchData = async () => {
     try {
       setLoading(true)
-      const response = await axios.get(`${API_URL}/api/v1/analyze?limit=150`)
+      const response = await axios.get(`${API_URL}/api/v1/analyze?limit=200`)
       setData(response.data)
       setError(null)
     } catch (err) {
