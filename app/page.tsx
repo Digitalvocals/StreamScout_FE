@@ -8,7 +8,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'
 interface GameOpportunity {
   rank: number
   name: string
-  viewers: number
+  total_viewers: number
   channels: number
   avg_viewers_per_channel: number
   discoverability_score: number
