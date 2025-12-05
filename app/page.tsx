@@ -130,10 +130,10 @@ export default function Home() {
           <div className="max-w-2xl mx-auto text-center mb-6 px-4">
             <h2 className="text-lg sm:text-xl font-bold text-matrix-green mb-2">What is StreamScout?</h2>
             <p className="text-sm sm:text-base text-matrix-green-dim leading-relaxed">
-              Not another "just sort by viewers" tool. Our algorithm weighs discoverability, viability, and engagement metrics to identify streaming opportunities hiding in plain sight.
+              Not another "just sort by viewers" tool. Our algorithm weighs discoverability, viability, and engagement metrics to find opportunities most streamers miss.
             </p>
             <p className="text-sm sm:text-base text-matrix-green-dim leading-relaxed mt-2">
-              We surface the games where small streamers can actually compete. No guesswork. Just data.
+              We show you where small streamers can actually compete. No guesswork. Just data.
             </p>
           </div>
           
