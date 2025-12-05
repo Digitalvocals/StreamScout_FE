@@ -188,14 +188,14 @@ export default function Home() {
                         </div>
                         
                         {/* Score - Always Visible */}
-                        <div className="text-right flex-shrink-0 ml-2">
+                        <div className="text-right flex-shrink-0 ml-2 pr-1">
                           <div className={`text-2xl sm:text-4xl md:text-5xl font-bold leading-none ${getScoreColor(game.overall_score)}`}>
                             {game.overall_score.toFixed(2)}
                           </div>
-                          <div className="text-[10px] sm:text-xs text-matrix-green-dim mt-1 whitespace-nowrap">
+                          <div className="text-[10px] sm:text-xs text-matrix-green-dim mt-1">
                             {game.trend}
                           </div>
-                          <div className="text-[9px] sm:text-xs text-matrix-green-dim whitespace-nowrap">
+                          <div className="text-[8px] sm:text-[10px] text-matrix-green-dim leading-tight max-w-[80px] sm:max-w-none">
                             {game.recommendation}
                           </div>
                         </div>
