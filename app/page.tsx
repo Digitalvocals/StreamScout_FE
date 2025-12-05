@@ -133,7 +133,10 @@ export default function Home() {
               Not another "just sort by viewers" tool. Our algorithm weighs discoverability, viability, and engagement metrics to find opportunities most streamers miss.
             </p>
             <p className="text-sm sm:text-base text-matrix-green-dim leading-relaxed mt-2">
-              We show you where small streamers can actually compete. No guesswork. Just data.
+              We show you where small streamers can actually compete.
+            </p>
+            <p className="text-base sm:text-lg font-bold text-matrix-green mt-3">
+              No guesswork. Just data.
             </p>
           </div>
           
