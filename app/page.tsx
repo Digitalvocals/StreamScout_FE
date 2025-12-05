@@ -29,8 +29,14 @@ interface AnalysisData {
   timestamp: string
   total_games_analyzed: number
   top_opportunities: GameOpportunity[]
-  cache_expires_in_seconds: number
-  next_update: string
+  // Support both old and new backend field names
+  cache_expires_in_seconds?: number
+  next_refresh_in_seconds?: number
+  next_update?: string
+  // Warmup state
+  status?: string
+  message?: string
+  is_refreshing?: boolean
 }
 
 export default function Home() {
@@ -39,6 +45,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null)
   const [selectedGame, setSelectedGame] = useState<GameOpportunity | null>(null)
   const [countdown, setCountdown] = useState<number>(0)
+  const [isWarmingUp, setIsWarmingUp] = useState(false)
 
   // Helper function to create Twitch search URL
   const getTwitchUrl = (gameName: string) => {
@@ -52,8 +59,10 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
-    if (data) {
-      setCountdown(data.cache_expires_in_seconds)
+    if (data && data.top_opportunities) {
+      // Support both old and new backend field names
+      const refreshSeconds = data.next_refresh_in_seconds ?? data.cache_expires_in_seconds ?? 600
+      setCountdown(refreshSeconds)
       const timer = setInterval(() => {
         setCountdown((prev) => Math.max(0, prev - 1))
       }, 1000)
@@ -61,21 +70,49 @@ export default function Home() {
     }
   }, [data])
 
+  // Auto-retry when warming up
+  useEffect(() => {
+    if (isWarmingUp) {
+      const retryTimer = setTimeout(() => {
+        fetchData()
+      }, 5000) // Retry every 5 seconds during warmup
+      return () => clearTimeout(retryTimer)
+    }
+  }, [isWarmingUp])
+
   const fetchData = async () => {
     try {
       setLoading(true)
       const response = await axios.get(`${API_URL}/api/v1/analyze?limit=200`)
-      setData(response.data)
-      setError(null)
-    } catch (err) {
-      setError('Failed to load data. Please try again later.')
-      console.error(err)
+      
+      // Check if backend is still warming up (202 status or status field)
+      if (response.status === 202 || response.data.status === 'warming_up') {
+        setIsWarmingUp(true)
+        setData(null)
+        setError(null)
+      } else {
+        setIsWarmingUp(false)
+        setData(response.data)
+        setError(null)
+      }
+    } catch (err: any) {
+      // Handle 202 responses that axios might treat as errors
+      if (err.response?.status === 202 || err.response?.data?.status === 'warming_up') {
+        setIsWarmingUp(true)
+        setData(null)
+        setError(null)
+      } else {
+        setIsWarmingUp(false)
+        setError('Failed to load data. Please try again later.')
+        console.error(err)
+      }
     } finally {
       setLoading(false)
     }
   }
 
   const formatCountdown = (seconds: number) => {
+    if (isNaN(seconds) || seconds < 0) return '10:00'
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
     return `${mins}:${secs.toString().padStart(2, '0')}`
@@ -86,6 +123,29 @@ export default function Home() {
     if (score >= 0.65) return 'score-good'
     if (score >= 0.50) return 'score-moderate'
     return 'score-poor'
+  }
+
+  // Warming up state
+  if (isWarmingUp) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center max-w-md px-4">
+          <div className="text-4xl sm:text-6xl mb-4 animate-glow">[ WARMING UP ]</div>
+          <div className="text-matrix-green-dim mb-4">
+            StreamScout is fetching fresh data from Twitch...
+          </div>
+          <div className="text-matrix-green-dim text-sm">
+            This takes about 90 seconds after a server restart.
+          </div>
+          <div className="mt-6">
+            <div className="inline-block w-8 h-8 border-4 border-matrix-green border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <div className="text-matrix-green-dim text-xs mt-4">
+            Auto-retrying every 5 seconds...
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (loading && !data) {
@@ -160,7 +220,7 @@ export default function Home() {
           {/* Main Game Grid - Full Width */}
           <main className="w-full">
             <div className="grid gap-4">
-              {data?.top_opportunities.map((game) => (
+              {data?.top_opportunities?.map((game) => (
                 <div 
                   key={game.rank} 
                   className="matrix-card cursor-pointer"
@@ -298,7 +358,7 @@ export default function Home() {
         {/* Footer */}
         <footer className="mt-12 pt-8 border-t border-matrix-green/30 text-center text-sm text-matrix-green-dim">
           <p>Built by <span className="text-matrix-green font-bold">DIGITALVOCALS</span></p>
-          <p className="mt-2">Data updates every 15 minutes • Powered by Twitch API</p>
+          <p className="mt-2">Data updates every 10 minutes • Powered by Twitch API</p>
           <p className="mt-2">
             Affiliate Disclosure: We may earn a commission from game purchases through our links.
           </p>
