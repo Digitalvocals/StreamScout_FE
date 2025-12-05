@@ -83,7 +83,7 @@ export default function Home() {
   const fetchData = async () => {
     try {
       setLoading(true)
-      const response = await axios.get(`${API_URL}/api/v1/analyze?limit=200`)
+      const response = await axios.get(`${API_URL}/api/v1/analyze?limit=500`)
       
       // Check if backend is still warming up (202 status or status field)
       if (response.status === 202 || response.data.status === 'warming_up') {
